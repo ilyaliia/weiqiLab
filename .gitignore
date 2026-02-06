@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.idea
+weiqi.db
+uploads/      # если хочешь игнорировать загруженные книги
+*.log
+.env
