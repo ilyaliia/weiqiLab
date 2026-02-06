@@ -2,10 +2,14 @@ from sqlalchemy import select
 from fastapi import APIRouter, HTTPException, Response, Depends
 from authx import AuthX, AuthXConfig
 
+from api.security import hash_password, verify_password
 from models.users import User
-from schemas.users import UserLoginSchema
+from schemas.auth.login import UserLoginSchema
+from schemas.auth.register import UserRegisterSchema
 from database import engine, Base, get_session
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from datetime import datetime, timezone
 
 router = APIRouter()
 
@@ -51,30 +55,79 @@ async def get_profile(
 
 # Auth
 @router.post("/reg")
-async def reg(user_data: UserLoginSchema, session: AsyncSession = Depends(get_session)):
+async def reg(
+        user_data: UserRegisterSchema,
+        session: AsyncSession = Depends(get_session)
+):
+    # check user exist
+    result = await session.execute(
+        select(User).where(
+            (User.username == user_data.username) |
+            (User.email == user_data.email)
+        )
+    )
+    existing_user = result.scalar_one_or_none()
+
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Пользователь с таким именем или email уже существует"
+        )
+
+    # check password
+    if user_data.password != user_data.password_confirm:
+        raise HTTPException(
+            status_code=400,
+            detail="Пароли не совпадают"
+        )
+
+    # hash password
+    password_hash = hash_password(user_data.password)
+
     new_user = User(
         username=user_data.username,
         email=user_data.email,
-        password=user_data.password  # No hash
+        password_hash=password_hash,
     )
 
-    # save in db
+    # db refresh
     session.add(new_user)
     await session.commit()
+    await session.refresh(new_user)
 
-    return {"message": "User created", "username": user_data.username}
+    return {
+        "message": "Пользователь создан",
+        "user_id": new_user.id,
+        "username": new_user.username,
+    }
 
 
 @router.post("/login")
 async def login(creds: UserLoginSchema, response: Response, session: AsyncSession = Depends(get_session)):
+    # find user
     result = await session.execute(
         select(User).where(User.username == creds.username)
     )
     user = result.scalar_one_or_none()
 
-    if user and user.password == creds.password:
-        token = security.create_access_token(uid=str(user.id))
-        response.set_cookie(config.JWT_ACCESS_COOKIE_NAME, token)
-        return {"access_token": token, "user_id": user.id}
+    # check password
+    if not user or not verify_password(creds.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
 
-    raise HTTPException(status_code=401, detail="Incorrect username or password")
+    token = security.create_access_token(uid=str(user.id))
+
+    response.set_cookie(
+        key="my_access_token",
+        value=token,
+        httponly=True
+    )
+
+    # last_seen
+    user.last_seen = datetime.utcnow()
+    await session.commit()
+
+    return {
+        "access_token": token,
+        "user_id": user.id,
+        "username": user.username
+    }
