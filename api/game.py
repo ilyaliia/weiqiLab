@@ -2,8 +2,11 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
+from api.dependencies import get_current_user
 from database import get_session
+from engine.board import Board
 from models.game import Game
+from models.users import User
 from schemas.game.game import GameCreateSchema, BotCreateSchema
 
 router = APIRouter()
@@ -41,7 +44,13 @@ async def create_bot_game(
 
 
 @router.post("/{game_id}/move")
-async def make_move():
+async def make_move(
+        board: Board,
+        game_id: int,
+        session: AsyncSession = Depends(get_session),
+        current_user: User = Depends(get_current_user)
+):
+    # game = await session.get(Game, game_id)
     pass
 
 
