@@ -12,4 +12,3 @@ class BotCreateSchema(GameCreateSchema):
     handicap: int = Field(0, ge=0, le=9)
     komi: float = 6.5
     player_color: int = Field(default=1, ge=1, le=2)
-

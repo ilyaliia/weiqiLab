@@ -1,13 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette import status
 
-from api.dependencies import get_current_user
 from database import get_session
 from engine.board import Board
 from models.game import Game
-from models.users import User
 from schemas.game.game import GameCreateSchema, BotCreateSchema
 
 router = APIRouter()
