@@ -21,7 +21,7 @@ class Board:
             return False
         return True
 
-    def make_move(self, x: int, y: int, color: int) -> bool:
+    def make_move(self, x: int, y: int, color: int):
         if not self.is_move_legal(x, y, color):
             return False
 
@@ -33,7 +33,6 @@ class Board:
         self.current_player = 1 if self.current_player == 2 else 2
         self.move_history.append((x, y, color))
         return new_grid, captured
-
 
 # b = Board()
 #

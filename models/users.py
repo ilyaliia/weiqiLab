@@ -1,9 +1,8 @@
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import String, Integer, Float, Text, Boolean, DateTime
 from datetime import datetime
 from typing import Optional
 
-from api.security import verify_password
 from database import Base
 
 
@@ -36,4 +35,4 @@ class User(Base):
 
     # === Admin ===
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
-    permissions: Mapped[str] = mapped_column(Text, default="[]")  # JSON как строка
+    permissions: Mapped[str] = mapped_column(Text, default="[]")  # JSON

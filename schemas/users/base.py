@@ -2,7 +2,7 @@ from pydantic import BaseModel, EmailStr
 
 from typing import Optional
 
-import datetime
+from datetime import datetime
 
 
 class UserBaseSchema(BaseModel):

@@ -14,7 +14,12 @@ class GameCreateBotSchema:
     pass
 
 
-@router.post("/vs-bot")
+@router.post(
+    "/vs-bot",
+    summary="Create game vs bot",
+    description="Creates a new game against AI bot with specified parameters",
+    tags=["Game 🎮"]
+)
 async def create_bot_game(
         game_data: BotCreateSchema,
         session: AsyncSession = Depends(get_session)
@@ -41,7 +46,12 @@ async def create_bot_game(
     }
 
 
-@router.post("/move")
+@router.post(
+    "/move",
+    summary="Make a move",
+    description="Place a stone on the board in the specified game",
+    tags=["Game 🎮"]
+)
 async def make_move(
         game_id: int = Body(...),
         x: int = Body(...),
@@ -54,19 +64,19 @@ async def make_move(
     game = result.scalar_one_or_none()
 
     if not game:
-        raise HTTPException(404, detail="Игра не найдена")
+        raise HTTPException(404, detail="Game is not founded")
 
     user_color = 1 if game.user_is_black else 2  # 1=black, 2=white
 
     if game.current_player != user_color:
-        raise HTTPException(400, detail="Сейчас не ваш ход")
+        raise HTTPException(400, detail="It`s not your move")
 
     board = Board(grid=game.grid)
 
     try:
         new_grid, captured = board.make_move(x, y, color=user_color)
     except Exception as e:
-        raise HTTPException(400, detail=f"Недопустимый ход: {str(e)}")
+        raise HTTPException(400, detail=f"Can`t move: {str(e)}")
 
     game.grid = new_grid
     game.current_player = 2 if game.current_player == 1 else 1
@@ -90,11 +100,21 @@ async def make_move(
     }
 
 
-@router.get("/{game_id}")
+@router.get(
+    "/{game_id}",
+    summary="Get game state",
+    description="Returns current board state and game information",
+    tags=["Game 🎮"]
+)
 async def get_game_state():
     pass
 
 
-@router.post("/{game_id}/resign")
+@router.post(
+    "/{game_id}/resign",
+    summary="Resign game",
+    description="Surrender the current game",
+    tags=["Game 🎮"]
+)
 async def resign_game(game_id: int):
     pass

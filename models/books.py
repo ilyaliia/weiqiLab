@@ -15,7 +15,6 @@ class Books(Base):
     language: Mapped[str] = "ru"
     pages: Mapped[int]
 
-    # Сделай поля nullable=True
     file_path: Mapped[str] = mapped_column(nullable=True)
     file_size: Mapped[int] = mapped_column(nullable=True)
     file_format: Mapped[str] = mapped_column(nullable=True)

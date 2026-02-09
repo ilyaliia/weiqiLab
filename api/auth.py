@@ -2,14 +2,14 @@ from sqlalchemy import select
 from fastapi import APIRouter, HTTPException, Response, Depends
 from authx import AuthX, AuthXConfig
 
-from api.security import hash_password, verify_password
+from core.security import hash_password, verify_password
 from models.users import User
 from schemas.auth.login import UserLoginSchema
 from schemas.auth.register import UserRegisterSchema
 from database import engine, Base, get_session
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 router = APIRouter()
 
@@ -24,7 +24,12 @@ security = AuthX(config=config)
 
 
 # database setup
-@router.post("/setup_database")
+@router.post(
+    "/setup_database",
+    summary="create database",
+    description="⚠️ DELETE ALL and create new db.",
+    tags=["Development ⚙️"]
+)
 async def setup_database():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
@@ -32,7 +37,12 @@ async def setup_database():
     return {"success": True}
 
 
-@router.get("/profile")
+@router.get(
+    "/me",
+    summary="Get current user profile",
+    description="Returns the profile of the authenticated user based on JWT token",
+    tags=["Users 👤"]
+)
 async def get_profile(
         current_user=Depends(security.access_token_required),
         session: AsyncSession = Depends(get_session)
@@ -53,11 +63,15 @@ async def get_profile(
     }
 
 
-# Auth
-@router.post("/reg")
+@router.post(
+    "/register",
+    summary="Register new user",
+    description="Creates a new user account with username, email and password",
+    tags=["Auth 🔐"]
+)
 async def reg(
-        user_data: UserRegisterSchema,
-        session: AsyncSession = Depends(get_session)
+    user_data: UserRegisterSchema,
+    session: AsyncSession = Depends(get_session)
 ):
     # check user exist
     result = await session.execute(
@@ -71,14 +85,14 @@ async def reg(
     if existing_user:
         raise HTTPException(
             status_code=400,
-            detail="Пользователь с таким именем или email уже существует"
+            detail="User with this username or email already exists"
         )
 
     # check password
     if user_data.password != user_data.password_confirm:
         raise HTTPException(
             status_code=400,
-            detail="Пароли не совпадают"
+            detail="Passwords do not match"
         )
 
     # hash password
@@ -96,13 +110,18 @@ async def reg(
     await session.refresh(new_user)
 
     return {
-        "message": "Пользователь создан",
+        "message": "User created successfully",
         "user_id": new_user.id,
         "username": new_user.username,
     }
 
 
-@router.post("/login")
+@router.post(
+    "/login",
+    summary="User login",
+    description="Authenticates user and returns JWT token. Sets HTTP-only cookie.",
+    tags=["Auth 🔐"]
+)
 async def login(creds: UserLoginSchema, response: Response, session: AsyncSession = Depends(get_session)):
     # find user
     result = await session.execute(

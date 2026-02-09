@@ -1,25 +1,36 @@
-from fastapi import APIRouter, UploadFile, File, Form, Depends
+from fastapi import APIRouter, UploadFile, File, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List
 import os
 
 from models.books import Books
-from schemas.books import BookSchema, BookSearchFilter
+from schemas.books.books import BookSchema, BookSearchFilter
 from database import get_session
 
 router = APIRouter()
 os.makedirs("uploads/books", exist_ok=True)
 
 
-@router.get("/books", response_model=List[BookSchema])
+@router.get(
+    "/books",
+    response_model=List[BookSchema],
+    summary="Get all books",
+    description="Returns a list of all available books",
+    tags=["Books 📚"]
+)
 async def get_books(session: AsyncSession = Depends(get_session)):
     result = await session.execute(select(Books))
     return result.scalars().all()
 
 
 # Book wo file
-@router.post("/books")
+@router.post(
+    "/books",
+    summary="Create book record",
+    description="Creates a book entry without file. Use upload endpoint to add PDF.",
+    tags=["Books 📚"]
+)
 async def create_book(book_data: BookSchema, session: AsyncSession = Depends(get_session)):
     new_book = Books(**book_data.dict())
     session.add(new_book)
@@ -28,7 +39,12 @@ async def create_book(book_data: BookSchema, session: AsyncSession = Depends(get
 
 
 # Load file to book
-@router.post("/books/{book_id}/upload")
+@router.post(
+    "/books/{book_id}/upload",
+    summary="Upload book file",
+    description="Uploads PDF file for an existing book record",
+    tags=["Books 📚"]
+)
 async def upload_book_file(
         book_id: int,
         file: UploadFile = File(...),
@@ -52,7 +68,12 @@ async def upload_book_file(
     return {"message": "File uploaded", "file": file_path}
 
 
-@router.get("/books/search")
+@router.get(
+    "/books/search",
+    summary="Search books",
+    description="Advanced search for books with filters, pagination and sorting",
+    tags=["Books 📚"]
+)
 async def search_books(
         filter: BookSearchFilter = Depends(),
         session: AsyncSession = Depends(get_session)
