@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Body
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
@@ -43,15 +44,53 @@ async def create_bot_game(
     }
 
 
-@router.post("/{game_id}/move")
+@router.post("/move")
 async def make_move(
-        board: Board,
-        game_id: int,
+        game_id: int = Body(...),
+        x: int = Body(...),
+        y: int = Body(...),
         session: AsyncSession = Depends(get_session),
-        current_user: User = Depends(get_current_user)
 ):
-    # game = await session.get(Game, game_id)
-    pass
+    result = await session.execute(
+        select(Game).where(Game.id == game_id)
+    )
+    game = result.scalar_one_or_none()
+
+    if not game:
+        raise HTTPException(404, detail="Игра не найдена")
+
+    user_color = 1 if game.user_is_black else 2  # 1=black, 2=white
+
+    if game.current_player != user_color:
+        raise HTTPException(400, detail="Сейчас не ваш ход")
+
+    board = Board(grid=game.grid)
+
+    try:
+        new_grid, captured = board.make_move(x, y, color=user_color)
+    except Exception as e:
+        raise HTTPException(400, detail=f"Недопустимый ход: {str(e)}")
+
+    game.grid = new_grid
+    game.current_player = 2 if game.current_player == 1 else 1
+
+    if captured:
+        if user_color == 1:
+            game.white_captured += len(captured)
+        else:
+            game.black_captured += len(captured)
+
+    await session.commit()
+
+    return {
+        "success": True,
+        "message": "Ход принят",
+        "new_grid": new_grid,
+        "captured_stones": captured,
+        "current_player": game.current_player,
+        "black_captured": game.black_captured,
+        "white_captured": game.white_captured
+    }
 
 
 @router.get("/{game_id}")

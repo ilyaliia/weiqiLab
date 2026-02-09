@@ -11,4 +11,5 @@ class BotCreateSchema(GameCreateSchema):
     bot_rating: int = 1000
     handicap: int = Field(0, ge=0, le=9)
     komi: float = 6.5
-    player_color: Literal["black", "white", "random"] = "random"
+    player_color: int = Field(default=1, ge=1, le=2)
+

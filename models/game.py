@@ -1,28 +1,35 @@
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Float, Integer, String, DateTime
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Column, Integer, String, Boolean, JSON, ForeignKey, Enum, Float, DateTime
+from sqlalchemy.orm import relationship
+import enum
 
 from database import Base
-
-from typing import Optional
 
 
 class Game(Base):
     __tablename__ = "games"
 
-    # from schema
-    id: Mapped[int] = mapped_column(primary_key=True)
-    board_size: Mapped[int] = mapped_column(Integer, default=19)
-    bot_rating: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    handicap: Mapped[int] = mapped_column(Integer, default=0)
-    komi: Mapped[float] = mapped_column(Float, default=6.5)
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
 
-    # players
-    black_player_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
-    white_player_id: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    board_size = Column(Integer, default=19)
+    handicap = Column(Integer, default=0)
+    komi = Column(Float, default=6.5)
+    bot_rating = Column(Integer, default=1000)
 
-    # system
-    status: Mapped[str] = mapped_column(String(20), default="active")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    user_is_black = Column(Boolean, default=True)
+    opponent_type = Column(String, default="bot")
+    current_player = Column(Integer, default=1)  # 1=black, 2=white
 
+    grid = Column(JSON, default=lambda: [[0] * 19 for _ in range(19)])
+
+
+    black_captured = Column(Integer, default=0)
+    white_captured = Column(Integer, default=0)
+
+    status = Column(String, default="active")  # active, finished, resigned
+
+
+    last_grid_hash = Column(String, nullable=True) # ko
+    created_at = Column(DateTime, default=datetime.utcnow)
