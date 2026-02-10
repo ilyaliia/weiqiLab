@@ -17,7 +17,10 @@ router = APIRouter()
 config = AuthXConfig()
 config.JWT_SECRET_KEY = "super_secret_key_min_32_chars_long_here!!!"
 config.JWT_ACCESS_COOKIE_NAME = "my_access_token"
-config.JWT_TOKEN_LOCATION = ["cookies"]
+config.JWT_TOKEN_LOCATION = ["cookies","headers"]
+config.JWT_ACCESS_TOKEN_EXPIRES = 60 * 60 * 24 * 7  # 7 days
+config.JWT_HEaDER_NAME = "Authorization"
+config.JWT_HEADER_TYPE = "Bearer"
 config.JWT_ALGORITHM = "HS256"
 
 security = AuthX(config=config)
