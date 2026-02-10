@@ -19,6 +19,7 @@ config.JWT_SECRET_KEY = "super_secret_key_min_32_chars_long_here!!!"
 config.JWT_ACCESS_COOKIE_NAME = "my_access_token"
 config.JWT_TOKEN_LOCATION = ["cookies"]
 config.JWT_ALGORITHM = "HS256"
+config.JWT_COOKIE_CSRF_PROTECT = False  # Development mode
 
 security = AuthX(config=config)
 
