@@ -38,32 +38,6 @@ async def setup_database():
     return {"success": True}
 
 
-@router.get(
-    "/me",
-    summary="Get current user profile",
-    description="Returns the profile of the authenticated user based on JWT token",
-    tags=["Users 👤"]
-)
-async def get_profile(
-        current_user=Depends(security.access_token_required),
-        session: AsyncSession = Depends(get_session)
-):
-    user_id_str = current_user.sub  # user_id from token
-    user_id = int(user_id_str)
-
-    # search user by id
-    result = await session.execute(
-        select(User).where(User.id == user_id)
-    )
-    user = result.scalar_one()  # user obj
-
-    return {
-        "user_id": user.id,
-        "username": user.username,
-        "email": user.email
-    }
-
-
 @router.post(
     "/register",
     summary="Register new user",
@@ -151,3 +125,13 @@ async def login(creds: UserLoginSchema, response: Response, session: AsyncSessio
         "user_id": user.id,
         "username": user.username
     }
+
+
+@router.post(
+    "/logout",
+    summary="User logout",
+    description="Logout from user account. Delete JWT-cookie",
+    tags=["Auth 🔐"]
+)
+async def logout():
+    ...

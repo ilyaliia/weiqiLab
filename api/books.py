@@ -24,6 +24,39 @@ async def get_books(session: AsyncSession = Depends(get_session)):
     return result.scalars().all()
 
 
+@router.get(
+    "/books/{book_id}",
+    summary="Get book by ID",
+    description="Return a specific book by its ID",
+    tags=["Books 📚"]
+)
+async def get_book_by_id(book_id: int):
+    ...
+
+
+@router.patch(
+    "/books/{book_id}",
+    summary="Update book",
+    description="Update book information by ID",
+    tags=["Books 📚"]
+)
+async def update_book(
+    book_id: int,
+    update_data: BookSchema,
+):
+    ...
+
+
+@router.delete(
+    "/books/{book_id}",
+    summary="Delete book",
+    description="Delete a book by ID",
+    tags=["Books 📚"]
+)
+async def delete_book_by_id(book_id: int):
+    ...
+
+
 # Book wo file
 @router.post(
     "/books",
@@ -70,7 +103,7 @@ async def upload_book_file(
 
 @router.get(
     "/books/search",
-    summary="Search books",
+    summary="Search books by params",
     description="Advanced search for books with filters, pagination and sorting",
     tags=["Books 📚"]
 )
@@ -123,3 +156,13 @@ async def search_books(
         "offset": filter.offset,
         "books": books
     }
+
+
+@router.post(
+    "/books/{book_id}/download",
+    summary="Download book",
+    description="Download book by id",
+    tags=["Books 📚"]
+)
+async def download_book():
+    ...

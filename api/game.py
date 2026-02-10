@@ -15,9 +15,9 @@ class GameCreateBotSchema:
 
 
 @router.post(
-    "/vs-bot",
-    summary="Create game vs bot",
-    description="Creates a new game against AI bot with specified parameters",
+    "/games",
+    summary="Create game",
+    description="Creates a new game",
     tags=["Game 🎮"]
 )
 async def create_bot_game(
@@ -47,13 +47,13 @@ async def create_bot_game(
 
 
 @router.post(
-    "/move",
+    "/games/{game_id}/move",
     summary="Make a move",
     description="Place a stone on the board in the specified game",
     tags=["Game 🎮"]
 )
 async def make_move(
-        game_id: int = Body(...),
+        game_id: int,
         x: int = Body(...),
         y: int = Body(...),
         session: AsyncSession = Depends(get_session),
@@ -101,7 +101,7 @@ async def make_move(
 
 
 @router.get(
-    "/{game_id}",
+    "/games/{game_id}",
     summary="Get game state",
     description="Returns current board state and game information",
     tags=["Game 🎮"]
@@ -109,12 +109,12 @@ async def make_move(
 async def get_game_state():
     pass
 
-
-@router.post(
-    "/{game_id}/resign",
-    summary="Resign game",
-    description="Surrender the current game",
-    tags=["Game 🎮"]
-)
-async def resign_game(game_id: int):
-    pass
+#
+# @router.post(
+#     "/{game_id}/resign",
+#     summary="Resign game",
+#     description="Surrender the current game",
+#     tags=["Game 🎮"]
+# )
+# async def resign_game(game_id: int):
+#     pass

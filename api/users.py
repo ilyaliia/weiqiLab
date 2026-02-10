@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.auth import security
 from core.dependencies import get_current_user
 from database import get_session
 from models.users import User
@@ -31,10 +32,36 @@ async def get_user_by_name(
     return user
 
 
-@router.post(
-    "/profile",
+@router.get(
+    "users/me",
+    summary="Get current user profile",
+    description="Returns the profile of the authenticated user based on JWT token",
+    tags=["Users 👤"]
+)
+async def get_profile(
+        current_user=Depends(security.access_token_required),
+        session: AsyncSession = Depends(get_session)
+):
+    user_id_str = current_user.sub  # user_id from token
+    user_id = int(user_id_str)
+
+    # search user by id
+    result = await session.execute(
+        select(User).where(User.id == user_id)
+    )
+    user = result.scalar_one()  # user obj
+
+    return {
+        "user_id": user.id,
+        "username": user.username,
+        "email": user.email
+    }
+
+
+@router.patch(
+    "/users/me",
     # response_model=UserBaseSchema,
-    summary="Update user profile",
+    summary="Update current user profile",
     description="Update bio, avatar, country, language.",
     tags=["Users 👤"])
 async def update_profile(
