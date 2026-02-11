@@ -7,15 +7,14 @@ class Game(Base):
     __tablename__ = "games"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    player1_id = Column(Integer, ForeignKey("users.id"))
+    player2_id = Column(Integer, ForeignKey("users.id"))
+    
 
     board_size = Column(Integer, default=19)
     handicap = Column(Integer, default=0)
     komi = Column(Float, default=6.5)
-    bot_rating = Column(Integer, default=1000)
 
-    user_is_black = Column(Boolean, default=True)
-    opponent_type = Column(String, default="bot")
     current_player = Column(Integer, default=1)  # 1=black, 2=white
 
     grid = Column(JSON, default=lambda: [[0] * 19 for _ in range(19)], nullable=False)
