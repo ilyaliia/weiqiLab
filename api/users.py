@@ -2,9 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.auth import security
+from core.dependencies import get_current_user
 from database import get_session
 from models.users import User
 from schemas.users.base import UserBaseSchema
+from schemas.users.update import UserUpdateSchema
 
 router = APIRouter()
 
@@ -27,3 +30,54 @@ async def get_user_by_name(
     if not user:
         raise HTTPException(404, detail="User not found")
     return user
+
+
+@router.get(
+    "users/me",
+    summary="Get current user profile",
+    description="Returns the profile of the authenticated user based on JWT token",
+    tags=["Users 👤"]
+)
+async def get_profile(
+        current_user=Depends(security.access_token_required),
+        session: AsyncSession = Depends(get_session)
+):
+    user_id_str = current_user.sub  # user_id from token
+    user_id = int(user_id_str)
+
+    # search user by id
+    result = await session.execute(
+        select(User).where(User.id == user_id)
+    )
+    user = result.scalar_one()  # user obj
+
+    return {
+        "user_id": user.id,
+        "username": user.username,
+        "email": user.email
+    }
+
+
+@router.patch(
+    "/users/me",
+    # response_model=UserBaseSchema,
+    summary="Update current user profile",
+    description="Update bio, avatar, country, language.",
+    tags=["Users 👤"])
+async def update_profile(
+        update_data: UserUpdateSchema,
+        current_user: User = Depends(get_current_user),
+        session: AsyncSession = Depends(get_session)
+):
+    if update_data.avatar_url is not None:
+        current_user.avatar_url = update_data.avatar_url
+    if update_data.bio is not None:
+        current_user.bio = update_data.bio
+    if update_data.country is not None:
+        current_user.country = update_data.country
+    if update_data.language is not None:
+        current_user.language = update_data.language
+
+    await session.commit()
+    return {"updated": True}
+

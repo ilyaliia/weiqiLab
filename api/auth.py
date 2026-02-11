@@ -22,6 +22,7 @@ config.JWT_ACCESS_TOKEN_EXPIRES = 60 * 60 * 24 * 7  # 7 days
 config.JWT_HEaDER_NAME = "Authorization"
 config.JWT_HEADER_TYPE = "Bearer"
 config.JWT_ALGORITHM = "HS256"
+config.JWT_COOKIE_CSRF_PROTECT = False  # Development mode
 
 security = AuthX(config=config)
 
@@ -38,32 +39,6 @@ async def setup_database():
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     return {"success": True}
-
-
-@router.get(
-    "/me",
-    summary="Get current user profile",
-    description="Returns the profile of the authenticated user based on JWT token",
-    tags=["Users 👤"]
-)
-async def get_profile(
-        current_user=Depends(security.access_token_required),
-        session: AsyncSession = Depends(get_session)
-):
-    user_id_str = current_user.sub  # user_id from token
-    user_id = int(user_id_str)
-
-    # search user by id
-    result = await session.execute(
-        select(User).where(User.id == user_id)
-    )
-    user = result.scalar_one()  # user obj
-
-    return {
-        "user_id": user.id,
-        "username": user.username,
-        "email": user.email
-    }
 
 
 @router.post(
@@ -153,3 +128,13 @@ async def login(creds: UserLoginSchema, response: Response, session: AsyncSessio
         "user_id": user.id,
         "username": user.username
     }
+
+
+@router.post(
+    "/logout",
+    summary="User logout",
+    description="Logout from user account. Delete JWT-cookie",
+    tags=["Auth 🔐"]
+)
+async def logout():
+    ...
