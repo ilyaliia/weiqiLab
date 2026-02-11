@@ -126,10 +126,11 @@ async def make_move(
     description="Returns current board state and game information",
     tags=["Game 🎮"]
 )
-async def get_game_state():
-    pass
+async def get_game_by_id(game_id: str, session: AsyncSession = Depends(get_session)):
+    game = await session.get(Game, game_id)
+    return game.grid
 
-#
+
 @router.post(
     "/{game_id}/resign",
     summary="Resign game",
@@ -207,7 +208,3 @@ async def find_match(
     }
 
 
-@router.get("/games/{game-id}")
-async def get_game_by_id(game_id: str, session: AsyncSession = Depends(get_session)):
-    game = await session.get(Game, game_id)
-    return game.grid
