@@ -1,8 +1,10 @@
-from fastapi import APIRouter, UploadFile, File, Depends
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List
 import os
+
+from starlette.responses import FileResponse
 
 from models.books import Books
 from schemas.books.books import BookSchema, BookSearchFilter
@@ -30,8 +32,11 @@ async def get_books(session: AsyncSession = Depends(get_session)):
     description="Return a specific book by its ID",
     tags=["Books 📚"]
 )
-async def get_book_by_id(book_id: int):
-    ...
+async def get_book_by_id(book_id: int, session: AsyncSession = Depends(get_session)):
+    book = await session.get(Books, book_id)
+    if not book:
+        return {"message": "Not founded"}
+    return book
 
 
 @router.patch(
@@ -43,8 +48,18 @@ async def get_book_by_id(book_id: int):
 async def update_book(
     book_id: int,
     update_data: BookSchema,
+    session: AsyncSession = Depends(get_session)
 ):
-    ...
+    book = await session.get(Books, book_id)
+    if book is None:
+        return {"message": f"No book by {book_id}"}
+
+    for field, value in update_data.dict(exclude_unset=True).items():
+        setattr(book, field, value)
+
+    await session.commit()
+
+    return {"message": "Successfully update book"}
 
 
 @router.delete(
@@ -53,9 +68,13 @@ async def update_book(
     description="Delete a book by ID",
     tags=["Books 📚"]
 )
-async def delete_book_by_id(book_id: int):
-    ...
-
+async def delete_book_by_id(book_id: int, session: AsyncSession = Depends(get_session)):
+    book = await session.get(Books, book_id)
+    if not book:
+        return {"message": f"No book by {book_id}"}
+    await session.delete(book)
+    await session.commit()
+    return {"message": f"Successfully deleted book - {book_id}"}
 
 # Book wo file
 @router.post(
@@ -164,5 +183,15 @@ async def search_books(
     description="Download book by id",
     tags=["Books 📚"]
 )
-async def download_book():
-    ...
+async def download_book(book_id: int, session: AsyncSession = Depends(get_session)):
+    book = await session.get(Books, book_id)
+    if not book:
+        return {"message": f"No book by {book_id}"}
+    if not os.path.exists(book.file_path):
+        raise HTTPException(404, "File not found")
+    return FileResponse(
+        path=book.file_path,
+        filename=f"{book.title}.pdf",
+        media_type="application/pdf"
+    )
+

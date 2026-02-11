@@ -9,7 +9,7 @@ from schemas.auth.register import UserRegisterSchema
 from database import engine, Base, get_session
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 router = APIRouter()
 
@@ -17,11 +17,13 @@ router = APIRouter()
 config = AuthXConfig()
 config.JWT_SECRET_KEY = "super_secret_key_min_32_chars_long_here!!!"
 config.JWT_ACCESS_COOKIE_NAME = "my_access_token"
-config.JWT_TOKEN_LOCATION = ["cookies","headers"]
+config.JWT_TOKEN_LOCATION = ["cookies", "headers"]
 config.JWT_ACCESS_TOKEN_EXPIRES = 60 * 60 * 24 * 7  # 7 days
-config.JWT_HEaDER_NAME = "Authorization"
+config.JWT_HEADER_NAME = "Authorization"
 config.JWT_HEADER_TYPE = "Bearer"
 config.JWT_ALGORITHM = "HS256"
+config.JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=7)
+config.JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
 config.JWT_COOKIE_CSRF_PROTECT = False  # Development mode
 
 security = AuthX(config=config)
@@ -136,5 +138,13 @@ async def login(creds: UserLoginSchema, response: Response, session: AsyncSessio
     description="Logout from user account. Delete JWT-cookie",
     tags=["Auth 🔐"]
 )
-async def logout():
-    ...
+async def logout(response: Response):
+    response.delete_cookie(
+        key="my_access_token",
+        httponly=True
+    )
+    return {
+        "message": "successfully logged out"
+    }
+
+
