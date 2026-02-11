@@ -138,5 +138,13 @@ async def login(creds: UserLoginSchema, response: Response, session: AsyncSessio
     description="Logout from user account. Delete JWT-cookie",
     tags=["Auth 🔐"]
 )
-async def logout():
-    ...
+async def logout(response: Response):
+    response.delete_cookie(
+        key="my_access_token",
+        httponly=True
+    )
+    return {
+        "message": "successfully logged out"
+    }
+
+

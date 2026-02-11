@@ -205,3 +205,9 @@ async def find_match(
         "position": position,
         "queue_size": len(match_queue)
     }
+
+
+@router.get("/games/{game-id}")
+async def get_game_by_id(game_id: str, session: AsyncSession = Depends(get_session)):
+    game = await session.get(Game, game_id)
+    return game.grid
