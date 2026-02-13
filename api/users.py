@@ -182,7 +182,7 @@ async def add_friend(
     if not user:
         return {"error": "User not found"}
 
-    # Проверяем существующую заявку
+    # is exist
     existing = await session.execute(
         select(Friends).where(
             Friends.sender_id == my_id,
@@ -217,7 +217,7 @@ async def respond_to_friend_request(
 ):
     my_id = int(current_user.sub)
 
-    # Ищем заявку где ОТПРАВИТЕЛЬ = user_id, ПОЛУЧАТЕЛЬ = my_id
+    # search respond
     result = await session.execute(
         select(Friends).where(
             Friends.sender_id == user_id,
