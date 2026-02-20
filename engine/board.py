@@ -186,8 +186,11 @@ class Board:
         self.grid = new_grid
         self.current_player = 1 if player_number == 2 else 2
         self.captures[player_number] += len(captured)
+
+
         for line in new_grid:
             print(line)
+            
         return new_grid, captured
 
     
