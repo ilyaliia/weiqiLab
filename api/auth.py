@@ -17,23 +17,30 @@ router = APIRouter()
 config = AuthXConfig()
 config.JWT_SECRET_KEY = "super_secret_key_min_32_chars_long_here!!!"
 config.JWT_ACCESS_COOKIE_NAME = "my_access_token"
+config.JWT_REFRESH_COOKIE_NAME = "my_refresh_token"
 config.JWT_TOKEN_LOCATION = ["cookies", "headers"]
-config.JWT_ACCESS_TOKEN_EXPIRES = 60 * 60 * 24 * 7  # 7 days
 config.JWT_HEADER_NAME = "Authorization"
 config.JWT_HEADER_TYPE = "Bearer"
 config.JWT_ALGORITHM = "HS256"
 config.JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=7)
 config.JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
 config.JWT_COOKIE_CSRF_PROTECT = False  # Development mode
+config.JWT_COOKIE_SECURE = False  # Use secure cookies only in production
 
 security = AuthX(config=config)
 
 
-# database setup
+@router.post("/refresh", summary="Refresh access token", tags=["Auth 🔐"])
+async def refresh_token(response: Response, refresh_data=Depends(security.refresh_token_required)):
+    new_access_token = security.create_access_token(uid=refresh_data.sub)
+    security.set_access_cookies(new_access_token, response)
+    return {"access_token": new_access_token}
+
+# Dev endpoint to setup database. Drop all tables and create new ones.
 @router.post(
     "/setup_database",
     summary="create database",
-    description="⚠️ DELETE ALL and create new db.",
+    description="⚠️ DELETE ALL and create new db. Use for development only",
     tags=["Development ⚙️"]
 )
 async def setup_database():
@@ -113,20 +120,18 @@ async def login(creds: UserLoginSchema, response: Response, session: AsyncSessio
     if not user or not verify_password(creds.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Incorrect username or password")
 
-    token = security.create_access_token(uid=str(user.id))
+    access_token = security.create_access_token(uid=str(user.id))
+    refresh_token = security.create_refresh_token(uid=str(user.id))
 
-    response.set_cookie(
-        key="my_access_token",
-        value=token,
-        httponly=True
-    )
+    security.set_access_cookies(access_token, response)
+    security.set_refresh_cookies(refresh_token, response)
 
     # last_seen
     user.last_seen = datetime.utcnow()
     await session.commit()
 
     return {
-        "access_token": token,
+        "access_token": access_token,
         "user_id": user.id,
         "username": user.username
     }
@@ -139,10 +144,7 @@ async def login(creds: UserLoginSchema, response: Response, session: AsyncSessio
     tags=["Auth 🔐"]
 )
 async def logout(response: Response):
-    response.delete_cookie(
-        key="my_access_token",
-        httponly=True
-    )
+    security.unset_cookies(response)
     return {
         "message": "successfully logged out"
     }

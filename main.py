@@ -3,6 +3,7 @@ from api import auth, game, books, users, puzzles
 
 app = FastAPI()
 
+auth.security.handle_errors(app)
 app.include_router(auth.router)
 app.include_router(books.router)
 app.include_router(game.router)

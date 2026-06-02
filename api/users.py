@@ -14,26 +14,6 @@ router = APIRouter()
 
 
 @router.get(
-    "/users/{username}",
-    response_model=UserBaseSchema,
-    summary="Get user profile by username",
-    description="Returns public user profile by username",
-    tags=["Users 👤"]
-)
-async def get_user_by_name(
-        username: str,
-        session: AsyncSession = Depends(get_session)
-):
-    result = await session.execute(
-        select(User).where(User.username == username)
-    )
-    user = result.scalar_one_or_none()
-    if not user:
-        raise HTTPException(404, detail="User not found")
-    return user
-
-
-@router.get(
     "/users/me",
     summary="Get current user profile",
     description="Returns the profile of the authenticated user based on JWT token",
@@ -81,6 +61,26 @@ async def update_profile(
 
     await session.commit()
     return {"updated": True}
+
+
+@router.get(
+    "/users/{username}",
+    response_model=UserBaseSchema,
+    summary="Get user profile by username",
+    description="Returns public user profile by username",
+    tags=["Users 👤"]
+)
+async def get_user_by_name(
+        username: str,
+        session: AsyncSession = Depends(get_session)
+):
+    result = await session.execute(
+        select(User).where(User.username == username)
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(404, detail="User not found")
+    return user
 
 
 @router.get(
